@@ -6,7 +6,7 @@ load_dotenv()
 
 CONFIG = {
     "water_clarity": 81,
-    "gas_price": 15,
+    "gas_price": 18,
     "marimo_address": "0xA35aa193f94A90eca0AE2a3fB5616E53C1F35193",
     "marimo_abi": [
         {
@@ -65,7 +65,7 @@ def check_marimo():
                 marimo_id).call()
             life_threshold = 60 * 60 * 24 * (100 - CONFIG["water_clarity"])
             # check for marimos life
-            if marimo_life < life_threshold or True:
+            if marimo_life < life_threshold:
                 print("Marimo life is good.")
             else:
                 print(
