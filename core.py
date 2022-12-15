@@ -73,6 +73,7 @@ def check_marimo():
                 nonce = w3.eth.get_transaction_count(
                     os.environ.get("PUBLIC_KEY"))
                 marimo_txn = contract.functions.changeWater(marimo_id).build_transaction({
+                    'chainId': 1,
                     'gas': 300000,
                     'maxFeePerGas': base_fee_per_gas,
                     'maxPriorityFeePerGas': w3.toWei('1', 'gwei'),
