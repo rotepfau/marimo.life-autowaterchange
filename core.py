@@ -6,7 +6,7 @@ load_dotenv()
 
 CONFIG = {
     "water_clarity": 81,
-    "gas_price": 18,
+    "gas_price": 10,
     "marimo_address": "0xA35aa193f94A90eca0AE2a3fB5616E53C1F35193",
     "marimo_abi": [
         {
@@ -72,9 +72,9 @@ def check_marimo():
                     f"Marimo life is {marimo_life / 60 / 60 / 24} days")
                 nonce = w3.eth.get_transaction_count(
                     os.environ.get("PUBLIC_KEY"))
-                print(nonce)
                 marimo_txn = contract.functions.changeWater(marimo_id).build_transaction({
-                    'maxFeePerGas': w3.toWei(CONFIG["gas_price"], 'gwei'),
+                    'gas': 300000,
+                    'maxFeePerGas': base_fee_per_gas,
                     'maxPriorityFeePerGas': w3.toWei('1', 'gwei'),
                     "nonce": nonce
                 })
@@ -82,9 +82,9 @@ def check_marimo():
                     marimo_txn,
                     private_key=os.environ.get("PRIVATE_KEY")
                 )
-                tx = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-                print(tx)
-                receipt = w3.eth.wait_for_transaction_receipt(tx)
+                w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+                print(signed_txn.hash)
+                receipt = w3.eth.wait_for_transaction_receipt(signed_txn.hash)
                 print(receipt)
 
 
