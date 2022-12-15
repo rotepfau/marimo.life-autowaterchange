@@ -65,7 +65,7 @@ def check_marimo():
                 marimo_id).call()
             life_threshold = 60 * 60 * 24 * (100 - CONFIG["water_clarity"])
             # check for marimos life
-            if marimo_life < life_threshold:
+            if marimo_life < life_threshold or True:
                 print("Marimo life is good.")
             else:
                 print(
@@ -92,7 +92,7 @@ async def log_loop(event_filter, poll_interval):
     while True:
         for event in event_filter.get_new_entries():
             check_marimo()
-            await asyncio.sleep(poll_interval)
+        await asyncio.sleep(poll_interval)
 
 
 def main():
