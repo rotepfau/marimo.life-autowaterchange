@@ -1,69 +1,36 @@
-import asyncio
-import os
+from time import sleep
 from web3 import Web3
-from dotenv import load_dotenv
-load_dotenv()
+import tomllib
+import json
 
-CONFIG = {
-    "water_clarity": 81,
-    "gas_price": 10,
-    "marimo_address": "0xA35aa193f94A90eca0AE2a3fB5616E53C1F35193",
-    "marimo_abi": [
-        {
-            "inputs": [
-                {"internalType": "uint256", "name": "tokenId", "type": "uint256"}
-            ],
-            "name": "changeWater",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {"internalType": "uint256", "name": "tokenId", "type": "uint256"}
-            ],
-            "name": "getElapsedTimeFromLastWaterChanged",
-            "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                {"internalType": "address", "name": "owner", "type": "address"}
-            ],
-            "name": "tokensOfOwner",
-            "outputs": [
-                {"internalType": "uint256[]", "name": "", "type": "uint256[]"}
-            ],
-            "stateMutability": "view",
-            "type": "function"
-        },
-    ]
-}
+with open("config.toml", "rb") as config_file:
+    config = tomllib.load(config_file)
+with open("abi.json", "r") as config_file:
+    abi = json.load(config_file)
 
-
-w3 = Web3(Web3.WebsocketProvider(os.environ.get("WSS_APIKEY")))
+w3 = Web3(Web3.HTTPProvider(config["PRIVATE"]["WSS_APIKEY"]))
 contract = w3.eth.contract(
-    address=CONFIG["marimo_address"], abi=CONFIG["marimo_abi"])
+    address=config["PUBLIC"]["marimo_address"], abi=abi)
 
 
 def check_marimo():
     block = w3.eth.get_block(block_identifier="latest")
-    base_fee_per_gas = block["baseFeePerGas"]
+    base_fee_per_gas = getattr(block, "baseFeePerGas")
     gas_in_gwei = Web3.fromWei(base_fee_per_gas, "gwei")
     # check for gas price
     print(
-        f"bh: {block['number']}")
-    if gas_in_gwei > CONFIG["gas_price"]:
+        f"bh: {getattr(block, 'number')}")
+    if gas_in_gwei > config["PUBLIC"]["gas_price"]:
         print(f"Gas too expensive. {gas_in_gwei} GWEI")
     else:
         # get all marimbo from PUBLIC_KEY acc and iterate over it
         marimos_owned = contract.functions.tokensOfOwner(
-            os.environ.get("PUBLIC_KEY")).call()
+            config["PRIVATE"]["PUBLIC_KEY"]).call()
         for marimo_id in marimos_owned:
             marimo_life = contract.functions.getElapsedTimeFromLastWaterChanged(
                 marimo_id).call()
-            life_threshold = 60 * 60 * 24 * (100 - CONFIG["water_clarity"])
+            life_threshold = 60 * 60 * 24 * \
+                (100 - config["PUBLIC"]["water_clarity"])
             # check for marimos life
             if marimo_life < life_threshold:
                 print("Marimo life is good.")
@@ -71,7 +38,7 @@ def check_marimo():
                 print(
                     f"Marimo life is {marimo_life / 60 / 60 / 24} days")
                 nonce = w3.eth.get_transaction_count(
-                    os.environ.get("PUBLIC_KEY"))
+                    config["PRIVATE"]["PUBLIC_KEY"])
                 marimo_txn = contract.functions.changeWater(marimo_id).build_transaction({
                     'chainId': 1,
                     'gas': 300000,
@@ -81,7 +48,7 @@ def check_marimo():
                 })
                 signed_txn = w3.eth.account.sign_transaction(
                     marimo_txn,
-                    private_key=os.environ.get("PRIVATE_KEY")
+                    private_key=config["PRIVATE"]["PRIVATE_KEY"]
                 )
                 w3.eth.send_raw_transaction(signed_txn.rawTransaction)
                 print(signed_txn.hash)
@@ -89,22 +56,7 @@ def check_marimo():
                 print(receipt)
 
 
-async def log_loop(event_filter, poll_interval):
-    while True:
-        for event in event_filter.get_new_entries():
-            check_marimo()
-        await asyncio.sleep(poll_interval)
-
-
-def main():
-    block_filter = w3.eth.filter("latest")
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(
-            asyncio.gather(log_loop(block_filter, 5)))
-    finally:
-        loop.close()
-
-
 if __name__ == '__main__':
-    main()
+    while True:
+        check_marimo()
+        sleep(5)
