@@ -16,7 +16,7 @@ contract = w3.eth.contract(
 def check_marimo():
     block = w3.eth.get_block(block_identifier="latest")
     base_fee_per_gas = getattr(block, "baseFeePerGas")
-    gas_in_gwei = Web3.fromWei(base_fee_per_gas, "gwei")
+    gas_in_gwei = Web3.from_wei(base_fee_per_gas, "gwei")
     # check for gas price
     print(
         f"bh: {getattr(block, 'number')}")
@@ -43,7 +43,7 @@ def check_marimo():
                     'chainId': 1,
                     'gas': 300000,
                     'maxFeePerGas': base_fee_per_gas,
-                    'maxPriorityFeePerGas': w3.toWei('1', 'gwei'),
+                    'maxPriorityFeePerGas': w3.to_wei('1', 'gwei'),
                     "nonce": nonce
                 })
                 signed_txn = w3.eth.account.sign_transaction(
