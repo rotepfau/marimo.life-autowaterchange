@@ -42,7 +42,7 @@ def check_marimo():
                 marimo_txn = contract.functions.changeWater(marimo_id).build_transaction({
                     'chainId': 1,
                     'gas': 300000,
-                    'maxFeePerGas': base_fee_per_gas,
+                    'maxFeePerGas': base_fee_per_gas + Web3.to_wei(1, "gwei"),
                     'maxPriorityFeePerGas': w3.to_wei('1', 'gwei'),
                     "nonce": nonce
                 })
